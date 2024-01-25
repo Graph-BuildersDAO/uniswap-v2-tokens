@@ -22,7 +22,7 @@ export let UNTRACKED_PAIRS: string[] = ['0x9ea3b5b4ec044b70375236a281986106457b2
 
 export function exponentToBigDecimal(decimals: BigInt): BigDecimal {
   let bd = BigDecimal.fromString('1')
-  for (let i = ZERO_BI; i.lt(decimals as BigInt); i = i.plus(ONE_BI)) {
+  for (let i = ZERO_BI; i.lt(decimals); i = i.plus(ONE_BI)) {
     bd = bd.times(BigDecimal.fromString('10'))
   }
   return bd
@@ -44,8 +44,8 @@ export function convertTokenToDecimal(tokenAmount: BigInt, exchangeDecimals: Big
 }
 
 export function equalToZero(value: BigDecimal): boolean {
-  const formattedVal = parseFloat(value.toString())
-  const zero = parseFloat(ZERO_BD.toString())
+  const formattedVal = value.toString()
+  const zero = ZERO_BD.toString()
   if (zero == formattedVal) {
     return true
   }
@@ -153,7 +153,7 @@ export function fetchTokenDecimals(tokenAddress: Address): BigInt {
 
 export function createUser(address: Address): void {
   let user = User.load(address.toHexString())
-  if (user === null) {
+  if (!user) {
     user = new User(address.toHexString())
     user.save()
   }

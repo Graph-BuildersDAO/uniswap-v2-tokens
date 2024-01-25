@@ -16,7 +16,7 @@ import {
 export function handleNewPair(event: PairCreated): void {
   // load factory (create if first exchange)
   let factory = UniswapFactory.load(FACTORY_ADDRESS)
-  if (factory === null) {
+  if (!factory) {
     factory = new UniswapFactory(FACTORY_ADDRESS)
     factory.pairCount = 0
     factory.totalVolumeETH = ZERO_BD
@@ -39,7 +39,7 @@ export function handleNewPair(event: PairCreated): void {
   let token1 = Token.load(event.params.token1.toHexString())
 
   // fetch info if null
-  if (token0 === null) {
+  if (!token0) {
     token0 = new Token(event.params.token0.toHexString())
     token0.symbol = fetchTokenSymbol(event.params.token0)
     token0.name = fetchTokenName(event.params.token0)
@@ -47,7 +47,7 @@ export function handleNewPair(event: PairCreated): void {
     let decimals = fetchTokenDecimals(event.params.token0)
 
     // bail if we couldn't figure out the decimals
-    if (decimals === null) {
+    if (!decimals) {
       log.debug('mybug the decimal on token 0 was null', [])
       return
     }
@@ -69,7 +69,7 @@ export function handleNewPair(event: PairCreated): void {
   }
 
   // fetch info if null
-  if (token1 === null) {
+  if (!token1) {
     token1 = new Token(event.params.token1.toHexString())
     token1.symbol = fetchTokenSymbol(event.params.token1)
     token1.name = fetchTokenName(event.params.token1)
@@ -77,7 +77,7 @@ export function handleNewPair(event: PairCreated): void {
     let decimals = fetchTokenDecimals(event.params.token1)
 
     // bail if we couldn't figure out the decimals
-    if (decimals === null) {
+    if (!decimals) {
       return
     }
     token1.decimals = decimals
@@ -115,16 +115,23 @@ export function handleNewPair(event: PairCreated): void {
   pair.untrackedVolumeUSD = ZERO_BD
   pair.token0Price = ZERO_BD
   pair.token1Price = ZERO_BD
-
-  let pairLookup = new PairTokenLookup(event.params.token0.toHexString().concat("-").concat(event.params.token1.toHexString()))
-  pairLookup.pairAddress = event.params.pair;
-  pairLookup.save()
-  // create the tracked contract based on the template
-  PairTemplate.create(event.params.pair)
-
-  // save updated values
   token0.save()
   token1.save()
   pair.save()
   factory.save()
+
+  let pairLookup0 = new PairTokenLookup(event.params.token0.toHexString().concat("-").concat(event.params.token1.toHexString()))
+  pairLookup0.pair = pair.id;
+  pairLookup0.save()
+
+  let pairLookup1 = new PairTokenLookup(event.params.token1.toHexString().concat("-").concat(event.params.token0.toHexString()))
+  pairLookup1.pair = pair.id;
+  pairLookup1.save()
+
+  
+  // create the tracked contract based on the template
+  PairTemplate.create(event.params.pair)
+
+  // save updated values
+ 
 }

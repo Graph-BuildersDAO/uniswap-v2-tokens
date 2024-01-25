@@ -70,7 +70,7 @@ type Token @entity {
 
 type PairTokenLookup @entity(immutable: true) {
   id: ID!
-  pairAddress: Bytes!
+  pair: Pair!
 }
 
 type Pair @entity {
