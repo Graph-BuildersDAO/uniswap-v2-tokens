@@ -3,9 +3,8 @@ import { log, BigInt, BigDecimal, Address, ethereum } from '@graphprotocol/graph
 import { ERC20 } from '../types/Factory/ERC20'
 import { ERC20SymbolBytes } from '../types/Factory/ERC20SymbolBytes'
 import { ERC20NameBytes } from '../types/Factory/ERC20NameBytes'
-import { User, Bundle, Token, LiquidityPosition, LiquidityPositionSnapshot, Pair } from '../types/schema'
+import { User, Bundle, Token, Pair } from '../types/schema'
 import { Factory as FactoryContract } from '../types/templates/Pair/Factory'
-import { TokenDefinition } from './tokenDefinition'
 
 export const ADDRESS_ZERO = '0x0000000000000000000000000000000000000000'
 export const FACTORY_ADDRESS = '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f'
@@ -59,10 +58,10 @@ export function isNullEthValue(value: string): boolean {
 
 export function fetchTokenSymbol(tokenAddress: Address): string {
   // static definitions overrides
-  let staticDefinition = TokenDefinition.fromAddress(tokenAddress)
-  if (staticDefinition != null) {
-    return (staticDefinition as TokenDefinition).symbol
-  }
+  // let staticDefinition = TokenDefinition.fromAddress(tokenAddress)
+  // if (staticDefinition != null) {
+  //   return (staticDefinition as TokenDefinition).symbol
+  // }
 
   let contract = ERC20.bind(tokenAddress)
   let contractSymbolBytes = ERC20SymbolBytes.bind(tokenAddress)
@@ -87,10 +86,10 @@ export function fetchTokenSymbol(tokenAddress: Address): string {
 
 export function fetchTokenName(tokenAddress: Address): string {
   // static definitions overrides
-  let staticDefinition = TokenDefinition.fromAddress(tokenAddress)
-  if (staticDefinition != null) {
-    return (staticDefinition as TokenDefinition).name
-  }
+  // let staticDefinition = TokenDefinition.fromAddress(tokenAddress)
+  // if (staticDefinition != null) {
+  //   return (staticDefinition as TokenDefinition).name
+  // }
 
   let contract = ERC20.bind(tokenAddress)
   let contractNameBytes = ERC20NameBytes.bind(tokenAddress)
@@ -135,10 +134,10 @@ export function fetchTokenTotalSupply(tokenAddress: Address): BigInt {
 
 export function fetchTokenDecimals(tokenAddress: Address): BigInt {
   // static definitions overrides
-  let staticDefinition = TokenDefinition.fromAddress(tokenAddress)
-  if (staticDefinition != null) {
-    return (staticDefinition as TokenDefinition).decimals
-  }
+  // let staticDefinition = TokenDefinition.fromAddress(tokenAddress)
+  // if (staticDefinition != null) {
+  //   return (staticDefinition as TokenDefinition).decimals
+  // }
 
   let contract = ERC20.bind(tokenAddress)
   // try types uint8 for decimals
@@ -156,7 +155,6 @@ export function createUser(address: Address): void {
   let user = User.load(address.toHexString())
   if (user === null) {
     user = new User(address.toHexString())
-    user.usdSwapped = ZERO_BD
     user.save()
   }
 }
