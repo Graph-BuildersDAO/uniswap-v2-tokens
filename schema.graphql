@@ -5,6 +5,8 @@ type UniswapFactory @entity {
   # pair info
   pairCount: Int!
 
+  pairIndex: Int!
+
   # total volume
   totalVolumeUSD: BigDecimal!
   totalVolumeETH: BigDecimal!

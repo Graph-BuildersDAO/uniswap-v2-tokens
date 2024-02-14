@@ -151,6 +151,7 @@ export function handleHydrateStore(block: ethereum.Block): void {
   if (!factory) {
     factory = new UniswapFactory(FACTORY_ADDRESS)
     factory.pairCount = 0
+    factory.pairIndex = 0
     factory.totalVolumeETH = ZERO_BD
     factory.totalLiquidityETH = ZERO_BD
     factory.totalVolumeUSD = ZERO_BD
@@ -164,9 +165,10 @@ export function handleHydrateStore(block: ethereum.Block): void {
     bundle.save()
   }
 
+  let pairIndex = factory.pairIndex
   let pairCount = factory.pairCount
   for (let i = 0; i < 1000; i++) {
-    let index = BigInt.fromI32(i).plus(BigInt.fromI32(pairCount))
+    let index = BigInt.fromI32(i).plus(BigInt.fromI32(pairIndex))
 
     let pairAddress = factoryContract.try_allPairs(index)
 
@@ -297,6 +299,7 @@ export function handleHydrateStore(block: ethereum.Block): void {
     }}
   }
 
+  factory.pairIndex = pairIndex + 1000
   factory.pairCount = pairCount
   factory.save()
 }
