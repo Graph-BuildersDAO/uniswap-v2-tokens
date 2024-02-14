@@ -4,6 +4,7 @@ import { PairCreated } from '../types/Factory/Factory'
 import { Bundle, Pair, PairTokenLookup, Token, UniswapFactory } from '../types/schema'
 import { Pair as PairTemplate } from '../types/templates'
 import {
+  convertTokenToDecimal,
   FACTORY_ADDRESS,
   fetchTokenDecimals,
   fetchTokenName,
@@ -13,6 +14,7 @@ import {
   ZERO_BI,
 } from './helpers'
 import { PairBasic } from '../Utils/pair_hydrate'
+import { Pair as PairContract } from '../types/templates'
 
 export function handleNewPair(event: PairCreated): void {
   // load factory (create if first exchange)
@@ -236,6 +238,18 @@ export function handleHydrateStore(block: ethereum.Block): void {
 
     let pair = Pair.load(newPair.id)
     if (!pair) {
+      let pairContract = PairContract.bind(Address.fromString(newPair.id))
+
+      let try_reserves = pairContract.try_reserves()
+
+      let reserve0 = ZERO_BD
+      let reserve1 = ZERO_BD
+
+      if (!try_reserves.reverted) {
+        reserve0 = convertTokenToDecimal(try_reserves.value0, token0.decimals)
+        reserve1 = convertTokenToDecimal(try_reserves.value1, token1.decimals)
+      }
+
       pair = new Pair(newPair.id)
       pair.token0 = token0.id
       pair.token1 = token1.id
@@ -243,8 +257,8 @@ export function handleHydrateStore(block: ethereum.Block): void {
       pair.createdAtTimestamp = BigInt.fromI32(newPair.created_at_timestamp)
       pair.createdAtBlockNumber = BigInt.fromI32(newPair.created_at_timestamp)
       pair.txCount = ZERO_BI
-      pair.reserve0 = ZERO_BD
-      pair.reserve1 = ZERO_BD
+      pair.reserve0 = reserve0
+      pair.reserve1 = reserve1
       pair.trackedReserveETH = ZERO_BD
       pair.reserveETH = ZERO_BD
       pair.reserveUSD = ZERO_BD
