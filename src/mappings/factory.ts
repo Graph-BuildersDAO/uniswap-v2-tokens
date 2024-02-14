@@ -15,6 +15,7 @@ import {
 } from './helpers'
 import { PairBasic } from '../Utils/pair_hydrate'
 import { Pair as PairContract } from '../types/templates'
+import { ERC20 } from '../types/Factory/ERC20'
 
 export function handleNewPair(event: PairCreated): void {
   // load factory (create if first exchange)
@@ -203,7 +204,6 @@ export function handleHydrateStore(block: ethereum.Block): void {
       token0.hourArray = []
       // token0.allPairs = []
       token0.txCount = ZERO_BI
-      token0.save()
     }
 
     // fetch info if null
@@ -232,24 +232,10 @@ export function handleHydrateStore(block: ethereum.Block): void {
       token1.hourArray = []
       // token1.allPairs = []
       token1.txCount = ZERO_BI
-
-      token1.save()
     }
 
     let pair = Pair.load(newPair.id)
     if (!pair) {
-      let pairContract = PairContract.bind(Address.fromString(newPair.id))
-
-      let try_reserves = pairContract.try_reserves()
-
-      let reserve0 = ZERO_BD
-      let reserve1 = ZERO_BD
-
-      if (!try_reserves.reverted) {
-        reserve0 = convertTokenToDecimal(try_reserves.value0, token0.decimals)
-        reserve1 = convertTokenToDecimal(try_reserves.value1, token1.decimals)
-      }
-
       pair = new Pair(newPair.id)
       pair.token0 = token0.id
       pair.token1 = token1.id
@@ -257,8 +243,8 @@ export function handleHydrateStore(block: ethereum.Block): void {
       pair.createdAtTimestamp = BigInt.fromI32(newPair.created_at_timestamp)
       pair.createdAtBlockNumber = BigInt.fromI32(newPair.created_at_timestamp)
       pair.txCount = ZERO_BI
-      pair.reserve0 = reserve0
-      pair.reserve1 = reserve1
+      pair.reserve0 = ZERO_BD
+      pair.reserve1 = ZERO_BD
       pair.trackedReserveETH = ZERO_BD
       pair.reserveETH = ZERO_BD
       pair.reserveUSD = ZERO_BD
@@ -272,6 +258,20 @@ export function handleHydrateStore(block: ethereum.Block): void {
 
       pair.save()
 
+      let token0Contract = ERC20.bind(Address.fromString(token0.id))
+      let token1Contract = ERC20.bind(Address.fromString(token0.id))
+
+      let try_balance0 = token0Contract.try_balanceOf(Address.fromString(pair.id))
+      let try_balance1 = token0Contract.try_balanceOf(Address.fromString(pair.id))
+
+      if (!try_balance0.reverted) {
+        token0.totalLiquidity = token0.totalLiquidity.plus(convertTokenToDecimal(try_balance0.value, token0.decimals))
+      }
+
+      if (!try_balance1.reverted) {
+        token1.totalLiquidity = token1.totalLiquidity.plus(convertTokenToDecimal(try_balance1.value, token0.decimals))
+      }
+
       let pairLookup0 = new PairTokenLookup(newPair.token_0.concat('-').concat(newPair.token_1))
       pairLookup0.pair = pair.id
       pairLookup0.save()
@@ -279,7 +279,12 @@ export function handleHydrateStore(block: ethereum.Block): void {
       let pairLookup1 = new PairTokenLookup(newPair.token_1.concat('-').concat(newPair.token_0))
       pairLookup1.pair = pair.id
       pairLookup1.save()
+
+      PairTemplate.create(Address.fromString(pair.id))
     }
+
+    token0.save()
+    token1.save()
   }
 
   factory.save()
