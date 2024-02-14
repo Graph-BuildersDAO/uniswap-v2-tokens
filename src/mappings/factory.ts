@@ -14,8 +14,7 @@ import {
   ZERO_BD,
   ZERO_BI,
 } from './helpers'
-import { PairBasic } from '../Utils/pair_hydrate'
-import { Pair as PairContract } from '../types/templates'
+import { Pair as PairContract } from '../types/FactoryHydrate/Pair'
 import { ERC20 } from '../types/Factory/ERC20'
 
 export function handleNewPair(event: PairCreated): void {
@@ -101,46 +100,50 @@ export function handleNewPair(event: PairCreated): void {
     token1.txCount = ZERO_BI
   }
 
-  let pair = new Pair(event.params.pair.toHexString()) as Pair
-  pair.token0 = token0.id
-  pair.token1 = token1.id
-  pair.liquidityProviderCount = ZERO_BI
-  pair.createdAtTimestamp = event.block.timestamp
-  pair.createdAtBlockNumber = event.block.number
-  pair.txCount = ZERO_BI
-  pair.reserve0 = ZERO_BD
-  pair.reserve1 = ZERO_BD
-  pair.trackedReserveETH = ZERO_BD
-  pair.reserveETH = ZERO_BD
-  pair.reserveUSD = ZERO_BD
-  pair.totalSupply = ZERO_BD
-  pair.volumeToken0 = ZERO_BD
-  pair.volumeToken1 = ZERO_BD
-  pair.volumeUSD = ZERO_BD
-  pair.untrackedVolumeUSD = ZERO_BD
-  pair.token0Price = ZERO_BD
-  pair.token1Price = ZERO_BD
-  token0.save()
-  token1.save()
-  pair.save()
-  factory.save()
+  let pair = Pair.load(event.params.pair.toHexString())
 
-  let pairLookup0 = new PairTokenLookup(
-    event.params.token0.toHexString().concat('-').concat(event.params.token1.toHexString()),
-  )
-  pairLookup0.pair = pair.id
-  pairLookup0.save()
+  if (!pair) {
+    pair = new Pair(event.params.pair.toHexString()) as Pair
+    pair.token0 = token0.id
+    pair.token1 = token1.id
+    pair.liquidityProviderCount = ZERO_BI
+    pair.createdAtTimestamp = event.block.timestamp
+    pair.createdAtBlockNumber = event.block.number
+    pair.txCount = ZERO_BI
+    pair.reserve0 = ZERO_BD
+    pair.reserve1 = ZERO_BD
+    pair.trackedReserveETH = ZERO_BD
+    pair.reserveETH = ZERO_BD
+    pair.reserveUSD = ZERO_BD
+    pair.totalSupply = ZERO_BD
+    pair.volumeToken0 = ZERO_BD
+    pair.volumeToken1 = ZERO_BD
+    pair.volumeUSD = ZERO_BD
+    pair.untrackedVolumeUSD = ZERO_BD
+    pair.token0Price = ZERO_BD
+    pair.token1Price = ZERO_BD
+    token0.save()
+    token1.save()
+    pair.save()
+    factory.save()
 
-  let pairLookup1 = new PairTokenLookup(
-    event.params.token1.toHexString().concat('-').concat(event.params.token0.toHexString()),
-  )
-  pairLookup1.pair = pair.id
-  pairLookup1.save()
+    let pairLookup0 = new PairTokenLookup(
+      event.params.token0.toHexString().concat('-').concat(event.params.token1.toHexString()),
+    )
+    pairLookup0.pair = pair.id
+    pairLookup0.save()
 
-  // create the tracked contract based on the template
-  PairTemplate.create(event.params.pair)
+    let pairLookup1 = new PairTokenLookup(
+      event.params.token1.toHexString().concat('-').concat(event.params.token0.toHexString()),
+    )
+    pairLookup1.pair = pair.id
+    pairLookup1.save()
 
-  // save updated values
+    // create the tracked contract based on the template
+    PairTemplate.create(event.params.pair)
+
+    // save updated values
+  }
 }
 
 export function handleHydrateStore(block: ethereum.Block): void {
@@ -168,22 +171,25 @@ export function handleHydrateStore(block: ethereum.Block): void {
     let pairAddress = factoryContract.try_allPairs(index)
 
     if (!pairAddress.reverted) {
-      let pairContract = PairContract.bind(pairAddress)
+      let pairContract = PairContract.bind(pairAddress.value)
 
-      let token0_id = pairContract.try_token0()
-      let token1_id = pairContract.try_token1()
+      let try_token0 = pairContract.try_token0()
+      let try_token1 = pairContract.try_token1()
 
+      if(!try_token0.reverted && !try_token1.reverted) {
+      let token0_id = try_token0.value
+      let token1_id = try_token1.value
       // create the tokens
-      let token0 = Token.load(token0_id)
-      let token1 = Token.load(token1_id)
+      let token0 = Token.load(token0_id.toHexString())
+      let token1 = Token.load(token1_id.toHexString())
 
       // fetch info if null
       if (!token0) {
-        token0 = new Token(token0_id)
-        token0.symbol = fetchTokenSymbol(Address.fromString(token0_id))
-        token0.name = fetchTokenName(Address.fromString(token0_id))
-        token0.totalSupply = fetchTokenTotalSupply(Address.fromString(token0_id))
-        let decimals = fetchTokenDecimals(Address.fromString(token0_id))
+        token0 = new Token(token0_id.toHexString())
+        token0.symbol = fetchTokenSymbol(token0_id)
+        token0.name = fetchTokenName(token0_id)
+        token0.totalSupply = fetchTokenTotalSupply(token0_id)
+        let decimals = fetchTokenDecimals(token0_id)
 
         // bail if we couldn't figure out the decimals
         if (!decimals) {
@@ -209,11 +215,11 @@ export function handleHydrateStore(block: ethereum.Block): void {
 
       // fetch info if null
       if (!token1) {
-        token1 = new Token(token1_id)
-        token1.symbol = fetchTokenSymbol(Address.fromString(token1_id))
-        token1.name = fetchTokenName(Address.fromString(token1_id))
-        token1.totalSupply = fetchTokenTotalSupply(Address.fromString(token1_id))
-        let decimals = fetchTokenDecimals(Address.fromString(token1_id))
+        token1 = new Token(token1_id.toHexString())
+        token1.symbol = fetchTokenSymbol(token1_id)
+        token1.name = fetchTokenName(token1_id)
+        token1.totalSupply = fetchTokenTotalSupply(token1_id)
+        let decimals = fetchTokenDecimals(token1_id)
 
         // bail if we couldn't figure out the decimals
         if (!decimals) {
@@ -288,7 +294,7 @@ export function handleHydrateStore(block: ethereum.Block): void {
 
       token0.save()
       token1.save()
-    }
+    }}
   }
 
   factory.pairCount = pairCount

@@ -1,4 +1,4 @@
-specVersion: 0.0.8
+specVersion: 0.0.9
 description: Uniswap is a decentralized protocol for automated token exchange on Ethereum.
 repository: https://github.com/Uniswap/uniswap-v2-subgraph
 schema:
@@ -50,6 +50,8 @@ dataSources:
       abis:
         - name: Factory
           file: ./abis/factory.json
+        - name: Pair
+          file: ./abis/pair.json          
         - name: ERC20
           file: ./abis/ERC20.json
         - name: ERC20SymbolBytes
