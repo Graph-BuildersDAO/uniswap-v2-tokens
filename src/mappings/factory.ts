@@ -1,5 +1,5 @@
 /* eslint-disable prefer-const */
-import { log, BigInt } from '@graphprotocol/graph-ts'
+import { log, BigInt, ethereum } from '@graphprotocol/graph-ts'
 import { PairCreated } from '../types/Factory/Factory'
 import { Bundle, Pair, PairTokenLookup, Token, UniswapFactory } from '../types/schema'
 import { Pair as PairTemplate } from '../types/templates'
@@ -10,7 +10,7 @@ import {
   fetchTokenSymbol,
   fetchTokenTotalSupply,
   ZERO_BD,
-  ZERO_BI
+  ZERO_BI,
 } from './helpers'
 
 export function handleNewPair(event: PairCreated): void {
@@ -58,10 +58,10 @@ export function handleNewPair(event: PairCreated): void {
     token0.tradeVolumeUSD = ZERO_BD
     token0.untrackedVolumeUSD = ZERO_BD
     token0.totalLiquidity = ZERO_BD
-    token0.lastMinuteArchived = BigInt.fromI32(0);
-    token0.lastHourArchived = BigInt.fromI32(0);
-    token0.lastMinuteRecorded = BigInt.fromI32(0);
-    token0.lastHourRecorded = BigInt.fromI32(0);
+    token0.lastMinuteArchived = BigInt.fromI32(0)
+    token0.lastHourArchived = BigInt.fromI32(0)
+    token0.lastMinuteRecorded = BigInt.fromI32(0)
+    token0.lastHourRecorded = BigInt.fromI32(0)
     token0.minuteArray = []
     token0.hourArray = []
     // token0.allPairs = []
@@ -86,10 +86,10 @@ export function handleNewPair(event: PairCreated): void {
     token1.tradeVolumeUSD = ZERO_BD
     token1.untrackedVolumeUSD = ZERO_BD
     token1.totalLiquidity = ZERO_BD
-    token1.lastMinuteArchived = BigInt.fromI32(0);
-    token1.lastHourArchived = BigInt.fromI32(0);
-    token1.lastMinuteRecorded = BigInt.fromI32(0);
-    token1.lastHourRecorded = BigInt.fromI32(0);
+    token1.lastMinuteArchived = BigInt.fromI32(0)
+    token1.lastHourArchived = BigInt.fromI32(0)
+    token1.lastMinuteRecorded = BigInt.fromI32(0)
+    token1.lastHourRecorded = BigInt.fromI32(0)
     token1.minuteArray = []
     token1.hourArray = []
     // token1.allPairs = []
@@ -120,18 +120,22 @@ export function handleNewPair(event: PairCreated): void {
   pair.save()
   factory.save()
 
-  let pairLookup0 = new PairTokenLookup(event.params.token0.toHexString().concat("-").concat(event.params.token1.toHexString()))
-  pairLookup0.pair = pair.id;
+  let pairLookup0 = new PairTokenLookup(
+    event.params.token0.toHexString().concat('-').concat(event.params.token1.toHexString()),
+  )
+  pairLookup0.pair = pair.id
   pairLookup0.save()
 
-  let pairLookup1 = new PairTokenLookup(event.params.token1.toHexString().concat("-").concat(event.params.token0.toHexString()))
-  pairLookup1.pair = pair.id;
+  let pairLookup1 = new PairTokenLookup(
+    event.params.token1.toHexString().concat('-').concat(event.params.token0.toHexString()),
+  )
+  pairLookup1.pair = pair.id
   pairLookup1.save()
 
-  
   // create the tracked contract based on the template
   PairTemplate.create(event.params.pair)
 
   // save updated values
- 
 }
+
+export function handleHydrateStore(block: ethereum.block): void {}
