@@ -5,6 +5,7 @@ import { ERC20SymbolBytes } from '../types/Factory/ERC20SymbolBytes'
 import { ERC20NameBytes } from '../types/Factory/ERC20NameBytes'
 import { User, Bundle, Token, Pair } from '../types/schema'
 import { Factory as FactoryContract } from '../types/templates/Pair/Factory'
+import { TokenDefinition } from './tokenDefinition'
 
 export const ADDRESS_ZERO = '0x0000000000000000000000000000000000000000'
 export const FACTORY_ADDRESS = '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f'
@@ -132,21 +133,24 @@ export function fetchTokenTotalSupply(tokenAddress: Address): BigInt {
   return totalSupplyValue
 }
 
-export function fetchTokenDecimals(tokenAddress: Address): BigInt {
-  // static definitions overrides
-  // let staticDefinition = TokenDefinition.fromAddress(tokenAddress)
-  // if (staticDefinition != null) {
-  //   return (staticDefinition as TokenDefinition).decimals
-  // }
-
+export function fetchTokenDecimals(tokenAddress: Address): BigInt | null {
   let contract = ERC20.bind(tokenAddress)
   // try types uint8 for decimals
-  let decimalValue = 0
   let decimalResult = contract.try_decimals()
+
   if (!decimalResult.reverted) {
-    decimalValue = decimalResult.value
+    if (decimalResult.value.lt(BigInt.fromI32(255))) {
+      return decimalResult.value
+    }
+  } else {
+    // try with the static definition
+    let staticTokenDefinition = TokenDefinition.fromAddress(tokenAddress)
+    if (staticTokenDefinition) {
+      return staticTokenDefinition.decimals
+    }
   }
-  return BigInt.fromI32(decimalValue)
+
+  return null
 }
 
 
